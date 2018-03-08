@@ -1,0 +1,61 @@
+#!/usr/bin/python 
+import sys,getopt
+import paramiko
+from scp import SCPClient
+
+def SshCMD(Hip,Hport,Huser,Hpw,CmdList):
+	try:
+		ssh = paramiko.SSHClient()
+		ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+		ssh.connect(Hip,Hport,Huser,Hpw,timeout=5)
+		for m in CmdList:
+			stdin, stdout, stderr = ssh.exec_command(m)
+			stdin.write("Y")
+			result1 = ''.join(stdout.readlines())
+			print (result1)
+	except:
+		print ('%s\tError\n'%(Hip))
+	finally:
+		ssh.close()
+
+def FtpFiles(Hip,Hport,Huser,Hpw,Path,FileNames):
+	try:
+		scp=paramiko.Transport((Hip,int(Hport)))
+		scp.connect(username = Huser,password = Hpw)
+		sftp=paramiko.SFTPClient.from_transport(scp)
+		if Path == '':
+			Path = "/root/"
+		for f in FileNames:
+			sftp.put("/root/test/REPAIR/scripts/"+f,Path+f)
+			print (Hip+":"+Path+f+" is OK")
+	except:
+		print ('%s\tError\n'%(Hip))
+	finally:
+		scp.close()
+
+
+def DesHelp():
+	print ("-c  -----远程的命令(可多个)")
+	print ("-f  -----ftp的文件(可多个)")
+	print ("-p  -----ftp的路径(非必选项)")
+
+Hip = sys.argv[1]
+Hport = sys.argv[2]
+Huser = sys.argv[3]
+Hpw = sys.argv[4]
+FileNames=''
+opts,args = getopt.getopt(sys.argv[5:], "hf:c:p:")
+for op, value in opts:
+	if op == "-p":
+		Path = value
+	elif op == "-f":
+		FileNames = value.split(",")
+	elif op == "-c":
+		CmdList = value.split(",")
+		SshCMD(Hip,Hport,Huser,Hpw,CmdList)
+	elif op == "-h":
+		DesHelp()
+		sys.exit()
+
+if FileNames != '':
+	FtpFiles(Hip,Hport,Huser,Hpw,Path,FileNames)

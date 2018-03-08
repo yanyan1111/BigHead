@@ -1,2 +1,2 @@
 # BigHead
-just play
+snail
